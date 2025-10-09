@@ -196,7 +196,7 @@
                             </button>
                         </div>
                         <input type="text" id="messageInput" placeholder="اكتب رسالتك هنا..." maxlength="1000">
-                        <button class="send-btn" onclick="sendMessage()">
+                        <button class="send-btn">
                             <i class="fas fa-paper-plane"></i>
                         </button>
                     </div>

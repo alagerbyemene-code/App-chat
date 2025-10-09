@@ -3188,12 +3188,30 @@ function setupEventListeners() {
     document.getElementById('guestForm').addEventListener('submit', handleGuestLogin);
 
     // إرسال الرسائل
-    document.getElementById('messageInput').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter' && !e.shiftKey) {
+    const messageInput = document.getElementById('messageInput');
+    if (messageInput) {
+        messageInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        messageInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+            }
+        });
+    }
+
+    // زر إرسال الرسالة
+    const sendBtn = document.querySelector('.send-btn');
+    if (sendBtn) {
+        sendBtn.addEventListener('click', function(e) {
             e.preventDefault();
             sendMessage();
-        }
-    });
+        });
+    }
 
     // رفع الصور
     document.getElementById('imageInput').addEventListener('change', handleImageUpload);
@@ -7108,6 +7126,17 @@ let activeFrame = null; // الإطار المفعل حالياً
 const framesData = {
     owner: [
         {
+            id: 'owner_0',
+            name: 'تاج التنين الأسطوري',
+            rarity: 'owner',
+            price: null,
+            animation: 'legendary-glow',
+            gradient: 'radial-gradient(circle, #ffd700 0%, #ffed4e 30%, #ff8c00 60%, #ff1493 100%)',
+            imageUrl: 'https://i.postimg.cc/hGPbYrmH/image.png',
+            exclusive: true,
+            featured: true
+        },
+        {
             id: 'owner_1',
             name: 'التنين الذهبي',
             rarity: 'owner',
@@ -7257,18 +7286,26 @@ function createFrameCard(frame) {
     const isOwned = userFrames.includes(frame.id);
     const isActive = activeFrame === frame.id;
     const canPurchase = frame.price && userCoins >= frame.price;
+    const isFeatured = frame.featured || false;
 
     return `
-        <div class="frame-card ${frame.rarity} ${isOwned ? 'owned' : ''}">
+        <div class="frame-card ${frame.rarity} ${isOwned ? 'owned' : ''} ${isFeatured ? 'featured-frame' : ''}">
             ${isActive ? '<div class="active-indicator"><i class="fas fa-check"></i> مُفعّل</div>' : ''}
+            ${isFeatured ? '<div class="featured-badge">⭐ حصري جداً</div>' : ''}
 
             <div class="frame-preview">
-                <div class="frame-image ${frame.rarity}-frame animated-frame" data-animation="${frame.animation}" style="background: ${frame.gradient};">
-                    <div class="sample-avatar">
-                        <img src="https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg?auto=compress&cs=tinysrgb&w=100" alt="صورة تجريبية">
-                    </div>
-                    <div class="frame-overlay ${frame.rarity}"></div>
-                </div>
+                ${frame.imageUrl ?
+                    `<div class="frame-image-custom ${frame.rarity}-frame animated-frame" data-animation="${frame.animation}">
+                        <img src="${frame.imageUrl}" alt="${frame.name}" class="frame-custom-img">
+                    </div>`
+                    :
+                    `<div class="frame-image ${frame.rarity}-frame animated-frame" data-animation="${frame.animation}" style="background: ${frame.gradient};">
+                        <div class="sample-avatar">
+                            <img src="https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg?auto=compress&cs=tinysrgb&w=100" alt="صورة تجريبية">
+                        </div>
+                        <div class="frame-overlay ${frame.rarity}"></div>
+                    </div>`
+                }
             </div>
 
             <div class="frame-info">
@@ -7277,37 +7314,37 @@ function createFrameCard(frame) {
                     ${frame.rarity === 'owner' ? '👑 المالك' : frame.rarity === 'admin' ? '🛡️ إداري' : '💎 برنس'}
                 </span>
 
-                ${frame.price ? 
-                    `<p class="frame-price"><i class="fas fa-coins"></i> ${frame.price} نقطة</p>` 
-                    : 
+                ${frame.price ?
+                    `<p class="frame-price"><i class="fas fa-coins"></i> ${frame.price} نقطة</p>`
+                    :
                     `<p class="exclusive-tag">🔒 حصري</p>`
                 }
 
                 <div class="frame-actions">
-                    ${!isOwned && frame.price ? 
-                        `<button class="btn ${canPurchase ? 'btn-success' : 'btn-disabled'}" 
-                                onclick="buyFrame('${frame.id}')" 
+                    ${!isOwned && frame.price ?
+                        `<button class="btn ${canPurchase ? 'btn-success' : 'btn-disabled'}"
+                                onclick="buyFrame('${frame.id}')"
                                 ${!canPurchase ? 'disabled' : ''}>
                             <i class="fas fa-shopping-cart"></i> شراء
-                        </button>` 
+                        </button>`
                         : ''}
 
-                    ${isOwned && !isActive ? 
+                    ${isOwned && !isActive ?
                         `<button class="btn btn-primary" onclick="activateFrame('${frame.id}')">
                             <i class="fas fa-check-circle"></i> تفعيل
-                        </button>` 
+                        </button>`
                         : ''}
 
-                    ${isActive ? 
+                    ${isActive ?
                         `<button class="btn btn-active" disabled>
                             <i class="fas fa-star"></i> مُفعّل الآن
-                        </button>` 
+                        </button>`
                         : ''}
 
-                    ${!isOwned && !frame.price ? 
+                    ${!isOwned && !frame.price ?
                         `<button class="btn btn-disabled" disabled>
                             <i class="fas fa-lock"></i> غير متاح
-                        </button>` 
+                        </button>`
                         : ''}
                 </div>
             </div>
