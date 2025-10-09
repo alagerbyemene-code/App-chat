@@ -1451,127 +1451,55 @@ function loadOwnerPanel() {
     `;
     showUsersList();
 }
-    /**
-     * ملاحظة هامة: يجب تعريف المتغير العام 'isOwner' وتعيينه إلى 'true'
-     * عند تسجيل دخولك كمالك الموقع في دالة handleLogin.
-     * مثال:
-     * let isOwner = localStorage.getItem('isOwner') === 'true'; 
-     */
-
-    // قائمة المستخدمين التجريبية (في التطبيق الحقيقي يجب جلبها من الخادم)
-    let appUsers = [
+// عرض قائمة المستخدمين
+function showUsersList() {
+    const usersList = document.getElementById('usersList');
+    const demoUsers = [
         { id: 2, username: 'أحمد', rank: 'vip', email: 'ahmed@test.com' },
         { id: 3, username: 'فاطمة', rank: 'gold', email: 'fatima@test.com' },
         { id: 4, username: 'زائر', rank: 'visitor', email: 'visitor@test.com' }
     ];
-
-    // دالة مساعدة لتحديد لون الرتبة
-    function getRankColor(rank) {
-        switch (rank) {
-            case 'vip': return '#ffc107'; // ذهبي
-            case 'gold': return '#ffd700'; // أصفر
-            case 'silver': return '#c0c0c0'; // فضي
-            case 'bronze': return '#cd7f32'; // برونزي
-            case 'member': return '#4caf50'; // أخضر
-            case 'visitor':
-            default: return '#6c757d'; // رمادي
-        }
-    }
-
-    // ===========================================
-    // عرض قائمة المستخدمين مع التحكم الخاص بالمالك
-    // ===========================================
-    function showUsersList() {
-        const usersList = document.getElementById('usersList');
-
-        // التحقق من صلاحية المالك
-        const isCurrentUserOwner = typeof isOwner !== 'undefined' && isOwner; 
-
-        usersList.innerHTML = appUsers.map(user => `
-            <div style="border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 10px; background: #f9f9f9;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <strong>${user.username}</strong> 
-                        <span class="rank-badge" style="background: ${getRankColor(user.rank)}; color: white; padding: 2px 6px; border-radius: 10px; font-weight: bold;">
-                            ${user.rank}
-                        </span>
-                        <br><small>${user.email}</small>
-                    </div>
-
-                    ${isCurrentUserOwner ? 
-                    `
-                    <div>
-                        <button onclick="changeRank(${user.id}, '${user.username}')" style="padding: 5px 10px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; margin: 2px;">
-                            تغيير رتبة
-                        </button>
-                        <button onclick="removeRank(${user.id}, '${user.username}')" style="padding: 5px 10px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; margin: 2px;">
-                            إزالة رتبة
-                        </button>
-                    </div>
-                    `
-                    : ''} </div>
+    usersList.innerHTML = demoUsers.map(user => `
+        <div style="border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 10px; background: #f9f9f9;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <strong>${user.username}</strong> 
+                    <span class="rank-badge" style="background: ${user.rank === 'vip' ? '#ffc107' : user.rank === 'gold' ? '#ffd700' : '#6c757d'}; color: white; padding: 2px 6px; border-radius: 10px;">
+                        ${user.rank}
+                    </span>
+                    <br><small>${user.email}</small>
+                </div>
+                <div>
+                    <button onclick="changeRank(${user.id}, '${user.username}')" style="padding: 5px 10px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; margin: 2px;">
+                        تغيير رتبة
+                    </button>
+                    <button onclick="removeRank(${user.id}, '${user.username}')" style="padding: 5px 10px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; margin: 2px;">
+                        إزالة رتبة
+                    </button>
+                </div>
             </div>
-        `).join('');
+        </div>
+    `).join('');
+}
+// تغيير رتبة
+function changeRank(userId, username) {
+    const newRank = prompt(`ما هي الرتبة الجديدة لـ ${username}؟ (vip, gold, silver, bronze, member, visitor)`);
+    if (newRank && ['vip', 'gold', 'silver', 'bronze', 'member', 'visitor'].includes(newRank)) {
+        alert(`✅ تم تغيير رتبة ${username} إلى ${newRank}`);
+        // هنا تضيف الكود لتغيير الرتبة في الـ Backend
+        showUsersList(); // تحديث القائمة
+    } else {
+        alert('❌ رتبة غير صالحة');
     }
-
-    // ===========================================
-    // دالة تغيير الرتبة (تتطلب صلاحية المالك)
-    // ===========================================
-    function changeRank(userId, username) {
-        // 1. فحص صلاحية المالك
-        if (typeof isOwner === 'undefined' || !isOwner) {
-            alert('❌ ليس لديك صلاحية لتغيير رتب المستخدمين.');
-            return;
-        }
-
-        const availableRanks = ['vip', 'gold', 'silver', 'bronze', 'member', 'visitor'];
-        const newRank = prompt(`ما هي الرتبة الجديدة لـ ${username}؟ (${availableRanks.join(', ')})`);
-
-        if (newRank && availableRanks.includes(newRank.toLowerCase())) {
-
-            // **هنا يجب أن ترسل طلب (Fetch) إلى الخادم لتغيير الرتبة فعلياً**
-
-            // في الكود التجريبي: تحديث البيانات المحلية مباشرة
-            const userToUpdate = appUsers.find(u => u.id === userId);
-            if (userToUpdate) {
-                userToUpdate.rank = newRank.toLowerCase();
-                alert(`✅ تم تغيير رتبة ${username} بنجاح إلى ${newRank.toLowerCase()}`);
-                showUsersList(); // تحديث القائمة
-            } else {
-                alert('❌ لم يتم العثور على المستخدم.');
-            }
-
-        } else if (newRank !== null) { 
-            alert('❌ رتبة غير صالحة');
-        }
+}
+// إزالة رتبة
+function removeRank(userId, username) {
+    if (confirm(`هل أنت متأكد من إزالة رتبة ${username}؟`)) {
+        alert(`✅ تم إزالة رتبة ${username}`);
+        // هنا تضيف الكود لإزالة الرتبة في الـ Backend
+        showUsersList(); // تحديث القائمة
     }
-
-    // ===========================================
-    // دالة إزالة الرتبة (تتطلب صلاحية المالك)
-    // ===========================================
-    function removeRank(userId, username) {
-        // 1. فحص صلاحية المالك
-        if (typeof isOwner === 'undefined' || !isOwner) {
-            alert('❌ ليس لديك صلاحية لإزالة رتب المستخدمين.');
-            return;
-        }
-
-        // تأكيد العملية
-        if (confirm(`هل أنت متأكد من إزالة رتبة ${username}؟ سيتم تحويله إلى رتبة "visitor" (زائر).`)) {
-
-            // **هنا يجب أن ترسل طلب (Fetch) إلى الخادم لإزالة الرتبة فعلياً**
-
-            // في الكود التجريبي: تحديث البيانات المحلية مباشرة إلى 'visitor'
-            const userToUpdate = appUsers.find(u => u.id === userId);
-            if (userToUpdate) {
-                userToUpdate.rank = 'visitor';
-                alert(`✅ تم إزالة رتبة ${username} وتحويله إلى زائر.`);
-                showUsersList(); // تحديث القائمة
-            } else {
-                alert('❌ لم يتم العثور على المستخدم.');
-            }
-        }
-    }
+}
 // تحديث شريط التنقل
 function updateNavbar() {
     const navbar = document.querySelector('nav, .header, .navbar');
@@ -2254,6 +2182,101 @@ function openAppStore() {
         box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
     }
 }
+    <!-- مودال متجر التطبيق مع نظام الإطارات -->
+    <div id="appStoreModal" class="modal">
+        <div class="modal-content app-store-modal">
+            <div class="modal-header">
+                <h2>🏪 متجر التطبيق</h2>
+                <button class="close-btn" onclick="closeAppStore()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="store-header">
+                <div class="user-coins">
+                    <i class="fas fa-coins"></i>
+                    <span id="userCoinsDisplay">2000</span>
+                    <span>نقطة</span>
+                </div>
+
+                <div class="store-tabs">
+                    <button class="store-tab active" onclick="switchStoreTab('frames')">
+                        <i class="fas fa-crown"></i> الإطارات
+                    </button>
+                    <button class="store-tab" onclick="switchStoreTab('gifts')">
+                        <i class="fas fa-gift"></i> الهدايا
+                    </button>
+                    <button class="store-tab" onclick="switchStoreTab('decorations')">
+                        <i class="fas fa-palette"></i> الزخارف
+                    </button>
+                    <button class="store-tab" onclick="switchStoreTab('myItems')">
+                        <i class="fas fa-shopping-bag"></i> مشترياتي
+                    </button>
+                </div>
+            </div>
+
+            <!-- تبويب الإطارات -->
+            <div id="storeFramesTab" class="store-tab-content active">
+                <!-- إطارات المالك -->
+                <div class="frame-category">
+                    <h3 class="category-title owner-title">
+                        <i class="fas fa-dragon"></i> إطارات المالك
+                    </h3>
+                    <div class="frames-grid" id="ownerFramesGrid">
+                        <!-- سيتم ملؤها بالجافاسكريبت -->
+                    </div>
+                </div>
+
+                <!-- إطارات الإدارة -->
+                <div class="frame-category">
+                    <h3 class="category-title admin-title">
+                        <i class="fas fa-shield-alt"></i> إطارات الإدارة
+                    </h3>
+                    <div class="frames-grid" id="adminFramesGrid">
+                        <!-- سيتم ملؤها بالجافاسكريبت -->
+                    </div>
+                </div>
+
+                <!-- إطارات البرنس -->
+                <div class="frame-category">
+                    <h3 class="category-title prince-title">
+                        <i class="fas fa-gem"></i> إطارات البرنس
+                    </h3>
+                    <div class="frames-grid" id="princeFramesGrid">
+                        <!-- سيتم ملؤها بالجافاسكريبت -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- تبويب الهدايا -->
+            <div id="storeGiftsTab" class="store-tab-content">
+                <div class="coming-soon">
+                    <i class="fas fa-gift"></i>
+                    <h3>قريباً...</h3>
+                    <p>نظام الهدايا قيد التطوير</p>
+                </div>
+            </div>
+
+            <!-- تبويب الزخارف -->
+            <div id="storeDecorationsTab" class="store-tab-content">
+                <div class="coming-soon">
+                    <i class="fas fa-palette"></i>
+                    <h3>قريباً...</h3>
+                    <p>زخارف الأسماء قيد التطوير</p>
+                </div>
+            </div>
+
+            <!-- تبويب مشترياتي -->
+            <div id="storeMyItemsTab" class="store-tab-content">
+                <div class="my-items-container">
+                    <h3>إطاراتي المملوكة</h3>
+                    <div class="frames-grid" id="myFramesGrid">
+                        <!-- سيتم ملؤها بالجافاسكريبت -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
 /* ===== استجابة للأجهزة المحمولة ===== */
 @media (max-width: 768px) {
@@ -2312,5 +2335,100 @@ function openAppStore() {
 
 <script src="/socket.io/socket.io.js"></script>
 <script src="script.js"></script>
+    <!-- مودال متجر التطبيق مع نظام الإطارات -->
+    <div id="appStoreModal" class="modal">
+        <div class="modal-content app-store-modal">
+            <div class="modal-header">
+                <h2>🏪 متجر التطبيق</h2>
+                <button class="close-btn" onclick="closeAppStore()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="store-header">
+                <div class="user-coins">
+                    <i class="fas fa-coins"></i>
+                    <span id="userCoinsDisplay">2000</span>
+                    <span>نقطة</span>
+                </div>
+
+                <div class="store-tabs">
+                    <button class="store-tab active" onclick="switchStoreTab('frames')">
+                        <i class="fas fa-crown"></i> الإطارات
+                    </button>
+                    <button class="store-tab" onclick="switchStoreTab('gifts')">
+                        <i class="fas fa-gift"></i> الهدايا
+                    </button>
+                    <button class="store-tab" onclick="switchStoreTab('decorations')">
+                        <i class="fas fa-palette"></i> الزخارف
+                    </button>
+                    <button class="store-tab" onclick="switchStoreTab('myItems')">
+                        <i class="fas fa-shopping-bag"></i> مشترياتي
+                    </button>
+                </div>
+            </div>
+
+            <!-- تبويب الإطارات -->
+            <div id="storeFramesTab" class="store-tab-content active">
+                <!-- إطارات المالك -->
+                <div class="frame-category">
+                    <h3 class="category-title owner-title">
+                        <i class="fas fa-dragon"></i> إطارات المالك
+                    </h3>
+                    <div class="frames-grid" id="ownerFramesGrid">
+                        <!-- سيتم ملؤها بالجافاسكريبت -->
+                    </div>
+                </div>
+
+                <!-- إطارات الإدارة -->
+                <div class="frame-category">
+                    <h3 class="category-title admin-title">
+                        <i class="fas fa-shield-alt"></i> إطارات الإدارة
+                    </h3>
+                    <div class="frames-grid" id="adminFramesGrid">
+                        <!-- سيتم ملؤها بالجافاسكريبت -->
+                    </div>
+                </div>
+
+                <!-- إطارات البرنس -->
+                <div class="frame-category">
+                    <h3 class="category-title prince-title">
+                        <i class="fas fa-gem"></i> إطارات البرنس
+                    </h3>
+                    <div class="frames-grid" id="princeFramesGrid">
+                        <!-- سيتم ملؤها بالجافاسكريبت -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- تبويب الهدايا -->
+            <div id="storeGiftsTab" class="store-tab-content">
+                <div class="coming-soon">
+                    <i class="fas fa-gift"></i>
+                    <h3>قريباً...</h3>
+                    <p>نظام الهدايا قيد التطوير</p>
+                </div>
+            </div>
+
+            <!-- تبويب الزخارف -->
+            <div id="storeDecorationsTab" class="store-tab-content">
+                <div class="coming-soon">
+                    <i class="fas fa-palette"></i>
+                    <h3>قريباً...</h3>
+                    <p>زخارف الأسماء قيد التطوير</p>
+                </div>
+            </div>
+
+            <!-- تبويب مشترياتي -->
+            <div id="storeMyItemsTab" class="store-tab-content">
+                <div class="my-items-container">
+                    <h3>إطاراتي المملوكة</h3>
+                    <div class="frames-grid" id="myFramesGrid">
+                        <!-- سيتم ملؤها بالجافاسكريبت -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
