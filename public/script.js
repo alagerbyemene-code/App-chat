@@ -7095,3 +7095,426 @@ function equipFrame(frameId) {
     showNotification('تم تفعيل الإطار!', 'success');
     updateUserInterface();
 }
+// ========================================
+// 🎨 نظام الإطارات المتحركة - النسخة الكاملة
+// ========================================
+
+// بيانات المستخدم
+let userCoins = 2000;
+let userFrames = []; // الإطارات المملوكة
+let activeFrame = null; // الإطار المفعل حالياً
+
+// بيانات الإطارات
+const framesData = {
+    owner: [
+        {
+            id: 'owner_1',
+            name: 'التنين الذهبي',
+            rarity: 'owner',
+            price: null,
+            animation: 'golden-glow',
+            gradient: 'linear-gradient(45deg, #ff1493, #ff69b4, #ffd700)',
+            exclusive: true
+        },
+        {
+            id: 'owner_2',
+            name: 'العرش الملكي',
+            rarity: 'owner',
+            price: null,
+            animation: 'royal-pulse',
+            gradient: 'linear-gradient(45deg, #8b0000, #ff1493, #8b0000)',
+            exclusive: true
+        },
+        {
+            id: 'owner_3',
+            name: 'نار الفينيق',
+            rarity: 'owner',
+            price: null,
+            animation: 'dragon-fire',
+            gradient: 'linear-gradient(45deg, #ff4500, #ffd700, #ff4500)',
+            exclusive: true
+        }
+    ],
+    admin: [
+        {
+            id: 'admin_1',
+            name: 'الدرع الذهبي',
+            rarity: 'admin',
+            price: null,
+            animation: 'admin-shine',
+            gradient: 'linear-gradient(45deg, #ffd700, #ffed4e)',
+            exclusive: true
+        },
+        {
+            id: 'admin_2',
+            name: 'التاج الفضي',
+            rarity: 'admin',
+            price: null,
+            animation: 'silver-shine',
+            gradient: 'linear-gradient(45deg, #c0c0c0, #e8e8e8)',
+            exclusive: true
+        },
+        {
+            id: 'admin_3',
+            name: 'السيف المقدس',
+            rarity: 'admin',
+            price: null,
+            animation: 'power-glow',
+            gradient: 'linear-gradient(45deg, #007bff, #00bfff)',
+            exclusive: true
+        }
+    ],
+    prince: [
+        {
+            id: 'prince_1',
+            name: 'جوهرة الأمير',
+            rarity: 'prince',
+            price: 5000,
+            animation: 'prince-sparkle',
+            gradient: 'linear-gradient(45deg, #9370db, #ba55d3)',
+            exclusive: false
+        },
+        {
+            id: 'prince_2',
+            name: 'الهالة الملكية',
+            rarity: 'prince',
+            price: 8000,
+            animation: 'prince-gold',
+            gradient: 'linear-gradient(45deg, #daa520, #ffd700)',
+            exclusive: false
+        },
+        {
+            id: 'prince_3',
+            name: 'نجمة البرنس',
+            rarity: 'prince',
+            price: 10000,
+            animation: 'royal-pulse',
+            gradient: 'linear-gradient(45deg, #4b0082, #9370db)',
+            exclusive: false
+        }
+    ]
+};
+
+// ========================================
+// 🏪 فتح وإغلاق المتجر
+// ========================================
+
+function openAppStore() {
+    document.getElementById('appStoreModal').style.display = 'flex';
+    loadAllFrames();
+    updateCoinsDisplay();
+}
+
+function closeAppStore() {
+    document.getElementById('appStoreModal').style.display = 'none';
+}
+
+// ========================================
+// 📑 التبديل بين التبويبات
+// ========================================
+
+function switchStoreTab(tabName) {
+    // إخفاء كل التبويبات
+    document.querySelectorAll('.store-tab-content').forEach(tab => {
+        tab.classList.remove('active');
+    });
+
+    // إزالة active من الأزرار
+    document.querySelectorAll('.store-tab').forEach(btn => {
+        btn.classList.remove('active');
+    });
+
+    // إظهار التبويب المحدد
+    document.getElementById(`store${tabName.charAt(0).toUpperCase() + tabName.slice(1)}Tab`).classList.add('active');
+
+    // تفعيل الزر
+    event.target.classList.add('active');
+
+    // تحديث المحتوى حسب التبويب
+    if (tabName === 'myItems') {
+        loadMyFrames();
+    }
+}
+
+// ========================================
+// 📦 تحميل الإطارات
+// ========================================
+
+function loadAllFrames() {
+    loadFrameCategory('ownerFramesGrid', framesData.owner);
+    loadFrameCategory('adminFramesGrid', framesData.admin);
+    loadFrameCategory('princeFramesGrid', framesData.prince);
+}
+
+function loadFrameCategory(containerId, frames) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    container.innerHTML = frames.map(frame => createFrameCard(frame)).join('');
+}
+
+function createFrameCard(frame) {
+    const isOwned = userFrames.includes(frame.id);
+    const isActive = activeFrame === frame.id;
+    const canPurchase = frame.price && userCoins >= frame.price;
+
+    return `
+        <div class="frame-card ${frame.rarity} ${isOwned ? 'owned' : ''}">
+            ${isActive ? '<div class="active-indicator"><i class="fas fa-check"></i> مُفعّل</div>' : ''}
+
+            <div class="frame-preview">
+                <div class="frame-image ${frame.rarity}-frame animated-frame" data-animation="${frame.animation}" style="background: ${frame.gradient};">
+                    <div class="sample-avatar">
+                        <img src="https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg?auto=compress&cs=tinysrgb&w=100" alt="صورة تجريبية">
+                    </div>
+                    <div class="frame-overlay ${frame.rarity}"></div>
+                </div>
+            </div>
+
+            <div class="frame-info">
+                <h4 class="frame-name">${frame.name}</h4>
+                <span class="frame-rarity ${frame.rarity}">
+                    ${frame.rarity === 'owner' ? '👑 المالك' : frame.rarity === 'admin' ? '🛡️ إداري' : '💎 برنس'}
+                </span>
+
+                ${frame.price ? 
+                    `<p class="frame-price"><i class="fas fa-coins"></i> ${frame.price} نقطة</p>` 
+                    : 
+                    `<p class="exclusive-tag">🔒 حصري</p>`
+                }
+
+                <div class="frame-actions">
+                    ${!isOwned && frame.price ? 
+                        `<button class="btn ${canPurchase ? 'btn-success' : 'btn-disabled'}" 
+                                onclick="buyFrame('${frame.id}')" 
+                                ${!canPurchase ? 'disabled' : ''}>
+                            <i class="fas fa-shopping-cart"></i> شراء
+                        </button>` 
+                        : ''}
+
+                    ${isOwned && !isActive ? 
+                        `<button class="btn btn-primary" onclick="activateFrame('${frame.id}')">
+                            <i class="fas fa-check-circle"></i> تفعيل
+                        </button>` 
+                        : ''}
+
+                    ${isActive ? 
+                        `<button class="btn btn-active" disabled>
+                            <i class="fas fa-star"></i> مُفعّل الآن
+                        </button>` 
+                        : ''}
+
+                    ${!isOwned && !frame.price ? 
+                        `<button class="btn btn-disabled" disabled>
+                            <i class="fas fa-lock"></i> غير متاح
+                        </button>` 
+                        : ''}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// ========================================
+// 💰 شراء الإطار
+// ========================================
+
+function buyFrame(frameId) {
+    // البحث عن الإطار
+    let frame = null;
+    for (let category in framesData) {
+        frame = framesData[category].find(f => f.id === frameId);
+        if (frame) break;
+    }
+
+    if (!frame) {
+        showToast('الإطار غير موجود!', 'error');
+        return;
+    }
+
+    if (!frame.price) {
+        showToast('هذا الإطار غير متاح للشراء!', 'error');
+        return;
+    }
+
+    if (userCoins < frame.price) {
+        showToast(`رصيدك غير كافٍ! تحتاج ${frame.price} نقطة`, 'error');
+        return;
+    }
+
+    if (userFrames.includes(frameId)) {
+        showToast('تمتلك هذا الإطار بالفعل!', 'info');
+        return;
+    }
+
+    // خصم النقاط
+    userCoins -= frame.price;
+    userFrames.push(frameId);
+
+    // حفظ في localStorage
+    localStorage.setItem('userCoins', userCoins);
+    localStorage.setItem('userFrames', JSON.stringify(userFrames));
+
+    updateCoinsDisplay();
+    loadAllFrames();
+
+    showToast(`🎉 تم شراء "${frame.name}" بنجاح!`, 'success');
+}
+
+// ========================================
+// ✨ تفعيل الإطار
+// ========================================
+
+function activateFrame(frameId) {
+    if (!userFrames.includes(frameId)) {
+        showToast('لا تمتلك هذا الإطار!', 'error');
+        return;
+    }
+
+    activeFrame = frameId;
+    localStorage.setItem('activeFrame', frameId);
+
+    // تطبيق الإطار على صورة المستخدم في الشات
+    applyFrameToChat(frameId);
+
+    loadAllFrames();
+    showToast('✨ تم تفعيل الإطار بنجاح!', 'success');
+}
+
+// ========================================
+// 🖼️ تطبيق الإطار في الشات
+// ========================================
+
+function applyFrameToChat(frameId) {
+    // البحث عن الإطار
+    let frame = null;
+    for (let category in framesData) {
+        frame = framesData[category].find(f => f.id === frameId);
+        if (frame) break;
+    }
+
+    if (!frame) return;
+
+    // تطبيق على صورة المستخدم في الهيدر
+    const headerAvatar = document.getElementById('headerUserAvatar');
+    if (headerAvatar) {
+        headerAvatar.className = `user-avatar-mini frame-${frame.rarity}`;
+        headerAvatar.style.border = `3px solid transparent`;
+        headerAvatar.style.background = frame.gradient;
+        headerAvatar.style.padding = '3px';
+        headerAvatar.style.borderRadius = '50%';
+        headerAvatar.setAttribute('data-animation', frame.animation);
+    }
+
+    // تطبيق على كل رسائل المستخدم
+    document.querySelectorAll('.message.own .user-avatar').forEach(avatar => {
+        avatar.className = `user-avatar frame-${frame.rarity}`;
+        avatar.style.border = `3px solid transparent`;
+        avatar.style.background = frame.gradient;
+        avatar.style.padding = '3px';
+        avatar.style.borderRadius = '50%';
+        avatar.setAttribute('data-animation', frame.animation);
+    });
+}
+
+// ========================================
+// 📊 تحديث عرض النقاط
+// ========================================
+
+function updateCoinsDisplay() {
+    const coinsDisplay = document.getElementById('userCoinsDisplay');
+    if (coinsDisplay) {
+        coinsDisplay.textContent = userCoins;
+    }
+
+    // تحديث في البروفايل أيضاً
+    const profileCoins = document.getElementById('profileCoins');
+    if (profileCoins) {
+        profileCoins.textContent = userCoins;
+    }
+}
+
+// ========================================
+// 🛍️ تحميل مشترياتي
+// ========================================
+
+function loadMyFrames() {
+    const container = document.getElementById('myFramesGrid');
+    if (!container) return;
+
+    if (userFrames.length === 0) {
+        container.innerHTML = `
+            <div class="my-items-empty">
+                <i class="fas fa-shopping-bag"></i>
+                <h3>لا توجد إطارات</h3>
+                <p>لم تقم بشراء أي إطار بعد</p>
+            </div>
+        `;
+        return;
+    }
+
+    // جمع كل الإطارات المملوكة
+    const ownedFrames = [];
+    for (let category in framesData) {
+        framesData[category].forEach(frame => {
+            if (userFrames.includes(frame.id)) {
+                ownedFrames.push(frame);
+            }
+        });
+    }
+
+    container.innerHTML = ownedFrames.map(frame => createFrameCard(frame)).join('');
+}
+
+// ========================================
+// 🔔 إظهار رسائل التنبيه
+// ========================================
+
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'times-circle' : 'info-circle'}"></i>
+        <span>${message}</span>
+    `;
+
+    let container = document.querySelector('.toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.className = 'toast-container';
+        document.body.appendChild(container);
+    }
+
+    container.appendChild(toast);
+
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+
+// ========================================
+// 🚀 تحميل البيانات عند بدء التشغيل
+// ========================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    // تحميل البيانات المحفوظة
+    const savedCoins = localStorage.getItem('userCoins');
+    const savedFrames = localStorage.getItem('userFrames');
+    const savedActiveFrame = localStorage.getItem('activeFrame');
+
+    if (savedCoins) userCoins = parseInt(savedCoins);
+    if (savedFrames) userFrames = JSON.parse(savedFrames);
+    if (savedActiveFrame) {
+        activeFrame = savedActiveFrame;
+        applyFrameToChat(activeFrame);
+    }
+
+    updateCoinsDisplay();
+});
+
+// إغلاق المودال عند النقر خارجه
+window.onclick = function(event) {
+    const modal = document.getElementById('appStoreModal');
+    if (event.target === modal) {
+        closeAppStore();
+    }
